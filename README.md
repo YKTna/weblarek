@@ -1,6 +1,6 @@
 # Проектная работа "Веб-ларек"
 
-https://github.com/DefteEspero/weblarek
+https://github.com/YKTna/weblarek
 
 Стек: HTML, SCSS, TS, Vite
 
