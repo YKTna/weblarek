@@ -40,3 +40,64 @@ export interface OrderResponse {
 export type BuyerPayment = `online` | `offline`;
 export type BuyerError = Partial<Record<keyof BuyerData, string>>;
 
+export interface GalleryView {
+  items: HTMLElement[];
+}
+
+export interface HeaderView {
+  counter: number;
+}
+
+export interface ModalView {
+  content: HTMLElement;
+}
+
+export interface CardView extends IProduct { }
+
+export interface ProductEvent {
+  id: string;
+}
+
+export interface CartView {
+  items: HTMLElement[];
+  total: number;
+  disabled: boolean;
+}
+
+export interface CartCardView {
+  id: string;
+  title: string;
+  price: number | null;
+  index: number;
+}
+
+export interface PreviewCardView extends CardView {
+  buttonText: string;
+  buttonDisabled: boolean;
+  inCart: boolean;
+}
+
+export interface FormView {
+  valid: boolean;
+  errors: string;
+}
+
+export interface FormEvent {
+  form: string;
+  field: keyof BuyerData;
+  value: string;
+}
+
+export interface FormOrder extends FormView {
+  address: string;
+  payment: BuyerData["payment"];
+}
+
+export interface FormContacts extends FormView {
+  email: string;
+  phone: string;
+}
+
+export interface Success {
+  total: number;
+}

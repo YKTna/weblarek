@@ -89,3 +89,17 @@ export class EventEmitter implements IEvents {
     }
 }
 
+export const events = {
+    productsChange: "products:change",
+    cartOpen: "cart:open",
+    cartChanged: "cart:change",
+    buyerChanged: "buyer:changed",
+    orderOpen: "order:open",
+    orderSubmit: "order:submit",
+    contactsSubmit: "contacts:submit",
+    formChange: "form:change",
+    successClose: "success:close",
+    modalClose: "modal:close",
+    productSelect: "product:select",
+    previewChanged: "preview:changed"
+}
