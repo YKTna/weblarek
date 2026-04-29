@@ -65,7 +65,6 @@ export interface CartView {
 }
 
 export interface CartCardView {
-  id: string;
   title: string;
   price: number | null;
   index: number;
@@ -74,7 +73,6 @@ export interface CartCardView {
 export interface PreviewCardView extends CardView {
   buttonText: string;
   buttonDisabled: boolean;
-  inCart: boolean;
 }
 
 export interface FormView {

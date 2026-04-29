@@ -10,7 +10,7 @@ import { EventEmitter, events } from "./components/base/Events.ts";
 import { BuyerData, ProductEvent, BuyerError, BuyerPayment, OrderRequest, FormEvent } from "./types/index.ts";
 import { cloneTemplate, ensureElement } from "./utils/utils.ts";
 import { PreviewCard } from "./components/View/PreviewCard.ts";
-import { BuyerCart } from "./components/View/BuyerCart.ts";
+import { BayerCart } from "./components/View/CartView.ts";
 import { Modal } from "./components/View/Modal.ts";
 import { CatalogCard } from "./components/View/CatalogCard.ts";
 import { CartCard } from "./components/View/CartCard.ts";
@@ -33,28 +33,14 @@ const getOrderErrors = (errors: BuyerError): string => [errors.payment, errors.a
 const getContactsErrors = (errors: BuyerError): string => [errors.email, errors.phone].filter(Boolean).join(" ");
 const orderForm = new OrderForm(cloneTemplate<HTMLFormElement>("#order"), eventEmitter);
 const contactsForm = new ContactsForm(cloneTemplate<HTMLFormElement>("#contacts"), eventEmitter);
-const buyerCart = new BuyerCart(cloneTemplate<HTMLElement>("#basket"), eventEmitter);
+const buyerCart = new BayerCart(cloneTemplate<HTMLElement>("#cart"), eventEmitter);
 const success = new OrderSuccess(cloneTemplate<HTMLElement>("#success"), eventEmitter);
-
 const previewCard = new PreviewCard(cloneTemplate<HTMLElement>("#card-preview"), () => {
-    const preview = products.getPreview();
-
-    if (!preview || preview.price === null) {
-        return;
-    }
-
-    if (cart.inCart(preview.id)) {
-      cart.removeItem(preview.id);
-    } else {
-      cart.addItem(preview);
-    }
-
-    modal.close();
+    eventEmitter.emit(events.previewButtonClick);
 });
 
 larekApi.getProducts().then((response) => {
     products.setItems(response.items);
-    console.log("Каталог товаров с сервера: ", products.getItems());
 })
 .catch((error: unknown) => {
     console.error("Ошибка получения каталога: ", error);
@@ -64,9 +50,14 @@ function renderCatalog(): void {
     const cards = products.getItems().map((item) => {
         const card = new CatalogCard(cloneTemplate<HTMLButtonElement>("#card-catalog"), () => {
             eventEmitter.emit<ProductEvent>(events.productSelect, { id: item.id });
-    });
+        });
 
-        return card.render(item);
+        return card.render({
+            title: item.title,
+            image: item.image,
+            price: item.price,
+            category: item.category
+        });
     });
 
     gallery.render({ items: cards });
@@ -96,12 +87,11 @@ function renderPreview(): HTMLElement {
 
 function renderCart(): HTMLElement {
     const cartItems = cart.getItems().map((item, index) => {
-        const cartCard = new CartCard(cloneTemplate<HTMLElement>("#card-basket"), () => {
-            cart.removeItem(item.id);
+        const cartCard = new CartCard(cloneTemplate<HTMLElement>("#card-cart"), () => {
+            eventEmitter.emit<ProductEvent>(events.cartItemDelete, { id: item.id });
         });
 
         return cartCard.render({
-            id: item.id,
             title: item.title,
             price: item.price,
             index: index + 1
@@ -123,7 +113,7 @@ function renderOrder(): HTMLElement {
         address: data.address,
         payment: data.payment,
         valid: errors.length === 0,
-        errors,
+        errors
     });
 }
 
@@ -152,10 +142,6 @@ eventEmitter.on(events.productsChange, () => {
     renderCatalog();
 });
 
-eventEmitter.on(events.previewChanged, () => {
-    renderPreview();
-});
-
 eventEmitter.on<ProductEvent>(events.productSelect, ({ id }) => {
     const product = products.getItemById(id);
 
@@ -167,6 +153,26 @@ eventEmitter.on<ProductEvent>(events.productSelect, ({ id }) => {
     openModalWindow(previewCard.render());
 });
 
+eventEmitter.on(events.previewButtonClick, () => {
+    const preview = products.getPreview();
+
+    if (!preview || preview.price === null) {
+        return;
+    }
+
+    if (cart.inCart(preview.id)) {
+        cart.removeItem(preview.id);
+    } else {
+        cart.addItem(preview);
+    }
+
+    modal.close();
+});
+
+eventEmitter.on(events.previewChanged, () => {
+    renderPreview();
+});
+
 eventEmitter.on(events.cartChanged, () => {
     renderHeader();
     renderCart();
@@ -175,6 +181,10 @@ eventEmitter.on(events.cartChanged, () => {
 
 eventEmitter.on(events.cartOpen, () => {
     openModalWindow(buyerCart.render());
+});
+
+eventEmitter.on<ProductEvent>(events.cartItemDelete, ({ id }) => {
+    cart.removeItem(id);
 });
 
 eventEmitter.on(events.orderOpen, () => {
@@ -196,10 +206,6 @@ eventEmitter.on(events.orderSubmit, () => {
 });
 
 eventEmitter.on(events.contactsSubmit, () => {
-    openModalWindow(success.render());
-});
-
-eventEmitter.on(events.contactsSubmit, () => {
     const data = buyer.getData();
 
     if (!data.payment) {
@@ -210,7 +216,7 @@ eventEmitter.on(events.contactsSubmit, () => {
         ...data,
         payment: data.payment,
         items: cart.getItems().map((item) => item.id),
-        total: cart.getTotalPrice(),
+        total: cart.getTotalPrice()
     };
 
     larekApi.createOrder(order).then((response) => {
